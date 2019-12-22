@@ -23,7 +23,11 @@ def downloadFirmware(version, type):
         print('Download ' + filename)
         urllib.request.urlretrieve (file_url, save_path)
 
-def bulkUpdate(devices, version):
+def bulkUpdate(devices, version, type):
+
+    if type == '':
+        type = settings['type']
+
     for device, settings in devices.items():
         downloadFirmware(version, type)
         sendUpdate(settings["host"], type, version)
@@ -117,7 +121,7 @@ if operation == 1:
 
     #Flash Minimal Version
     print("Let's start with the minimal firmware. This may take a few minutes.")
-    bulkUpdate(devices, version, true)
+    bulkUpdate(devices, version, 'minimal')
 
     #Show Status
     time.sleep(15)
@@ -126,7 +130,7 @@ if operation == 1:
 
     #Flash Regular Version
     print("Let's start with the regular firmware. This may take a few minutes.")
-    bulkUpdate(devices, 'de', version)
+    bulkUpdate(devices, version, '')
 
     #Show Status
     time.sleep(15)
