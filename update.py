@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import yaml
 import os
 import urllib.request
