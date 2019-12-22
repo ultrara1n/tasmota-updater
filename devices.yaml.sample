@@ -1,0 +1,5 @@
+device-name:      #a name for you to recognize your device
+  host:           #ip or host of the tasmota web interface
+  username:
+  password:
+  type:           #for example 'de', or nothing for pure tasmota
