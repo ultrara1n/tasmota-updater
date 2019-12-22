@@ -24,11 +24,9 @@ def downloadFirmware(version, type):
         urllib.request.urlretrieve (file_url, save_path)
 
 def bulkUpdate(devices, version, type):
-
-    if type == '':
-        type = settings['type']
-
     for device, settings in devices.items():
+        if type == '':
+            type = settings['type']
         downloadFirmware(version, type)
         sendUpdate(settings["host"], type, version)
 
@@ -106,8 +104,6 @@ print('Welcome to the tasmota-updater, what do you want to do?')
 print('1. Bulk update all devices to a specific version')
 print('2. Get device infos for all devices')
 operation = int(input('Your choice: '))
-
-print(operation)
 
 #Read devices from devices.yaml
 devices = readDevices()
