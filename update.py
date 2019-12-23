@@ -5,6 +5,7 @@ import os
 import urllib.request
 import requests
 import time
+import feedparser
 
 def downloadFirmware(version, type):
     #Compose download url
@@ -22,13 +23,6 @@ def downloadFirmware(version, type):
     if not os.path.isfile(path + '/' + filename):
         print('Download ' + filename)
         urllib.request.urlretrieve (file_url, save_path)
-
-def bulkUpdate(devices, version, type):
-    for device, settings in devices.items():
-        if type == '':
-            type = settings['type']
-        downloadFirmware(version, type)
-        sendUpdate(settings["host"], type, version)
 
 def sendUpdate(host, type, version):
     url = 'http://' + host + '/u2'
@@ -63,7 +57,7 @@ def getStatus(device):
 			r = requests.get(host, params=payload)
 			return r.json()
 		except:
-			print("Something went wrong with device %s. Retry. Attempt %s/5" % (credential["host"], attempt))
+			print("Something went wrong with device %s. Retry. Attempt %s/5" % (device["host"], attempt))
 	else:
 		print("Something went completely wrong with device %s" % device["host"])
 		print("It was not possible to etablish a connection to the device. Please check the devices.yaml and your firewall.")
@@ -99,19 +93,14 @@ def printStatus(devices):
                 '-'
             ))
 
-#Ask for operation
-print('Welcome to the tasmota-updater, what do you want to do?')
-print('1. Bulk update all devices to a specific version')
-print('2. Get device infos for all devices')
-operation = int(input('Your choice: '))
+def bulkUpdate(devices, version, type):
+    for device, settings in devices.items():
+        if type == '':
+            type = settings['type']
+        downloadFirmware(version, type)
+        sendUpdate(settings["host"], type, version)
 
-#Read devices from devices.yaml
-devices = readDevices()
-
-if operation == 1:
-    #Ask for version to be installed
-    version = input ("Enter version to be installed (e.g. 7.2.0): ")
-
+def updateProcedure(version):
     #Show status
     printStatus(devices)
 
@@ -132,6 +121,35 @@ if operation == 1:
     time.sleep(15)
     printStatus(devices)
     input("Press Enter to finish...")
+
+#Ask for operation
+print('Welcome to the tasmota-updater, what do you want to do?')
+print('1. Bulk update all devices to the newest version available')
+print('2. Bulk update all devices to a specific version')
+print('3. Get device infos for all devices')
+operation = int(input('Your choice: '))
+
+#Read devices from devices.yaml
+devices = readDevices()
+
+if operation == 1:
+    feed = feedparser.parse('https://github.com/arendst/Tasmota/releases.atom')
+
+    #Read version from link
+    tagurl = feed['items'][0]['link']
+    version = tagurl.split('/v')
+
+    #
+    input(version[1] + ' looks like the latest one. Press ENTER to start update.')
+
+    updateProcedure(version[1])
 elif operation == 2:
+    #Ask for version to be installed
+    version = input ("Enter version to be installed (e.g. 7.2.0): ")
+
+    #Start update
+    updateProcedure(version)
+
+elif operation == 3:
     #Show status
     printStatus(devices)
