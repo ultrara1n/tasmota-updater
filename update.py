@@ -6,6 +6,7 @@ import urllib.request
 import requests
 import time
 import feedparser
+from tabulate import tabulate
 
 def downloadFirmware(version, type):
     #Compose download url
@@ -75,23 +76,25 @@ def readDevices():
         raise FileNotFoundError("Could not find devices.yaml")
 
 def printStatus(devices):
-    print("Host\t\t\tName\tVersion")
-
+    status_array = []
+    counter = 1
     for device, settings in devices.items():
         status = getStatus(settings)
+        iteration_array = []
+        iteration_array.append(counter)
+        iteration_array.append(settings["host"])
+        iteration_array.append(settings["name"])
 
         if status:
-            print("%s\t%s\t%s" % (
-                settings["host"],
-                status["Status"]["FriendlyName"],
-                status["StatusFWR"]["Version"]
-            ))
+            iteration_array.append(status["Status"]["FriendlyName"][0])
+            iteration_array.append(status["StatusFWR"]["Version"])
         else:
-            print("%s\t%s\t%s" % (
-            device["host"],
-                '-',
-                '-'
-            ))
+            iteration_array.append('-')
+            iteration_array.append('-')
+        status_array.append(iteration_array)
+        counter += 1
+
+    print(tabulate(status_array, headers=["#","Host","Name", "Tasmota Name", "Tasmota Version"]))
 
 def bulkUpdate(devices, version, type):
     for device, settings in devices.items():
@@ -103,6 +106,7 @@ def bulkUpdate(devices, version, type):
 def updateProcedure(version):
     #Show status
     printStatus(devices)
+    input("These devices will be updated, proceed with ENTER")
 
     #Flash Minimal Version
     print("Let's start with the minimal firmware. This may take a few minutes.")
@@ -120,29 +124,35 @@ def updateProcedure(version):
     #Show Status
     time.sleep(15)
     printStatus(devices)
-    input("Press Enter to finish...")
+    input("Press ENTER to finish...")
 
-#Ask for operation
-print('Welcome to the tasmota-updater, what do you want to do?')
-print('1. Bulk update all devices to the newest version available')
-print('2. Bulk update all devices to a specific version')
-print('3. Get device infos for all devices')
-operation = int(input('Your choice: '))
-
-#Read devices from devices.yaml
-devices = readDevices()
-
-if operation == 1:
+def getNewestVersion():
     feed = feedparser.parse('https://github.com/arendst/Tasmota/releases.atom')
 
     #Read version from link
     tagurl = feed['items'][0]['link']
     version = tagurl.split('/v')
 
-    #
-    input(version[1] + ' looks like the latest one. Press ENTER to start update.')
+    return version[1]
 
-    updateProcedure(version[1])
+#Ask for operation
+print('Welcome to the tasmota-updater, what do you want to do?')
+print('1. Bulk update all devices to the newest version available')
+print('2. Bulk update all devices to a specific version')
+print('3. Update one device to newest version')
+print('4. Get device infos for all devices')
+operation = int(input('Your choice: '))
+
+#Read devices from devices.yaml
+devices = readDevices()
+
+if operation == 1:
+    newestVersion = getNewestVersion()
+
+    input(newestVersion + ' looks like the latest one. Press ENTER to start update.')
+
+    #Start update
+    updateProcedure(newestVersion)
 elif operation == 2:
     #Ask for version to be installed
     version = input ("Enter version to be installed (e.g. 7.2.0): ")
@@ -151,5 +161,24 @@ elif operation == 2:
     updateProcedure(version)
 
 elif operation == 3:
+    printStatus(devices)
+
+    number = int(input('Enter number of device to be updated: '))
+
+    counter = 1
+    for device, settings in devices.items():
+        if counter == number:
+            devices = {device: settings},
+            break
+        counter += 1
+
+    devices = devices[0]
+    newestVersion = getNewestVersion()
+
+    input(newestVersion + ' looks like the latest one. Press ENTER to start update.')
+
+    #Start update
+    updateProcedure(newestVersion)
+elif operation == 4:
     #Show status
     printStatus(devices)
