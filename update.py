@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import yaml
+import json
 import os
 import urllib.request
 import requests
 import time
-import feedparser
 from tabulate import tabulate
 
 def downloadFirmware(version, filename):
@@ -132,13 +132,11 @@ def updateProcedure(version):
     input("Press ENTER to finish...")
 
 def getNewestVersion():
-    feed = feedparser.parse('https://github.com/arendst/Tasmota/releases.atom')
+    latest_release = requests.get('https://api.github.com/repos/arendst/Tasmota/releases/latest')
 
-    #Read version from link
-    tagurl = feed['items'][0]['link']
-    version = tagurl.split('/v')
+    release_json = json.loads(latest_release.text)
 
-    return version[1]
+    return { 'release_name': release_json["name"], 'version': release_json["tag_name"].replace('v','')}
 
 #Ask for operation
 print("Welcome to the tasmota-updater, what do you want to do?\n")
@@ -154,10 +152,10 @@ devices = readDevices()
 if operation == 1:
     newestVersion = getNewestVersion()
 
-    input("\n" + newestVersion + " looks like the latest one. Press ENTER to start update.")
+    input("\n" + newestVersion['release_name'] + " looks like the latest release. Press ENTER to confirm.")
 
     #Start update
-    updateProcedure(newestVersion)
+    updateProcedure(newestVersion['version'])
 elif operation == 2:
     #Ask for version to be installed
     version = input ("Enter version to be installed (e.g. 7.2.0): ")
@@ -180,10 +178,13 @@ elif operation == 3:
     devices = devices[0]
     newestVersion = getNewestVersion()
 
-    input(newestVersion + ' looks like the latest one. Press ENTER to start update.')
+    input("\n" + newestVersion['release_name'] + " looks like the latest one. Press ENTER to start update.")
 
     #Start update
-    updateProcedure(newestVersion)
+    updateProcedure(newestVersion['version'])
 elif operation == 4:
     #Show status
     printStatus(devices)
+
+elif operation == 5:
+    print(getNewestVersion())
