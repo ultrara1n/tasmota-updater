@@ -8,9 +8,9 @@ import time
 import feedparser
 from tabulate import tabulate
 
-def downloadFirmware(version, type):
+def downloadFirmware(version, filename):
     #Compose download url
-    file_url = 'https://github.com/arendst/Tasmota/releases/download/v' + version + '/tasmota-' + type + '.bin'
+    file_url = 'https://github.com/arendst/Tasmota/releases/download/v' + version + '/' + filename
 
     #Create folder
     path = 'firmware/' + version
@@ -18,17 +18,16 @@ def downloadFirmware(version, type):
         os.makedirs(path)
 
     #Download file
-    filename = 'tasmota-' + type + '.bin'
     save_path = path + '/' + filename
 
     if not os.path.isfile(path + '/' + filename):
         print('Download ' + filename)
         urllib.request.urlretrieve (file_url, save_path)
 
-def sendUpdate(host, type, version):
+def sendUpdate(host, filename, version):
     url = 'http://' + host + '/u2'
 
-    firmware_path = 'firmware' + '/' + version + '/' + 'tasmota-' + type + '.bin'
+    firmware_path = 'firmware' + '/' + version + '/' + filename
 
     try:
         files = {'file': open(firmware_path, 'rb')}
@@ -82,8 +81,8 @@ def printStatus(devices):
         status = getStatus(settings)
         iteration_array = []
         iteration_array.append(counter)
-        iteration_array.append(settings["host"])
         iteration_array.append(settings["name"])
+        iteration_array.append(settings["host"])
 
         if status:
             iteration_array.append(status["Status"]["FriendlyName"][0])
@@ -94,31 +93,37 @@ def printStatus(devices):
         status_array.append(iteration_array)
         counter += 1
 
-    print(tabulate(status_array, headers=["#","Host","Name", "Tasmota Name", "Tasmota Version"]))
+    print("\n"+tabulate(status_array, headers=["#","Name","Host","Tasmota Name","Tasmota Version"]))
+
+def determineFilename(type):
+    if type is None:
+        return 'tasmota.bin'
+    else:
+        return 'tasmota-' + type + '.bin'
 
 def bulkUpdate(devices, version, type):
     for device, settings in devices.items():
         if type == '':
             type = settings['type']
-        downloadFirmware(version, type)
-        sendUpdate(settings["host"], type, version)
+        downloadFirmware(version, determineFilename(type))
+        sendUpdate(settings["host"], determineFilename(type), version)
 
 def updateProcedure(version):
     #Show status
     printStatus(devices)
-    input("These devices will be updated, proceed with ENTER")
+    input("\nThese devices will be updated, proceed with ENTER")
 
     #Flash Minimal Version
-    print("Let's start with the minimal firmware. This may take a few minutes.")
+    print("\nLet's start with the minimal firmware. This may take a few minutes.")
     bulkUpdate(devices, version, 'minimal')
 
     #Show Status
     time.sleep(15)
     printStatus(devices)
-    input("Is everything correct? If you want to continue press ENTER.")
+    input("\nIs everything correct? If you want to continue press ENTER.")
 
     #Flash Regular Version
-    print("Let's start with the regular firmware. This may take a few minutes.")
+    print("\nLet's start with the regular firmware. This may take a few minutes.")
     bulkUpdate(devices, version, '')
 
     #Show Status
@@ -136,12 +141,12 @@ def getNewestVersion():
     return version[1]
 
 #Ask for operation
-print('Welcome to the tasmota-updater, what do you want to do?')
+print("Welcome to the tasmota-updater, what do you want to do?\n")
 print('1. Bulk update all devices to the newest version available')
 print('2. Bulk update all devices to a specific version')
 print('3. Update one device to newest version')
-print('4. Get device infos for all devices')
-operation = int(input('Your choice: '))
+print('4. Get device infos for all devices\n')
+operation = int(input("Your choice: "))
 
 #Read devices from devices.yaml
 devices = readDevices()
@@ -149,7 +154,7 @@ devices = readDevices()
 if operation == 1:
     newestVersion = getNewestVersion()
 
-    input(newestVersion + ' looks like the latest one. Press ENTER to start update.')
+    input("\n" + newestVersion + " looks like the latest one. Press ENTER to start update.")
 
     #Start update
     updateProcedure(newestVersion)
@@ -163,7 +168,7 @@ elif operation == 2:
 elif operation == 3:
     printStatus(devices)
 
-    number = int(input('Enter number of device to be updated: '))
+    number = int(input("\nEnter number of device to be updated: "))
 
     counter = 1
     for device, settings in devices.items():
