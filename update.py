@@ -32,7 +32,7 @@ def sendUpdate(host, filename, version):
     try:
         files = {'file': open(firmware_path, 'rb')}
     except FileNotFoundError:
-        raise FileNotFoundError("Please make sure that firmware file {0} exists.".format(firmware))
+        raise FileNotFoundError("Please make sure that firmware file {0} exists.".format(firmware_path))
 
     for attempt in range(5):
         try:
@@ -138,12 +138,18 @@ def getNewestVersion():
 
     return { 'release_name': release_json["name"], 'version': release_json["tag_name"].replace('v','')}
 
+def checkDeviceExistence(devices, selectedDevices):
+    print('Hi')
+
 #Ask for operation
-print("Welcome to the tasmota-updater, what do you want to do?\n")
+print('Welcome to the tasmota-updater, what do you want to do?')
 print('1. Bulk update all devices to the newest version available')
 print('2. Bulk update all devices to a specific version')
 print('3. Update one device to newest version')
-print('4. Get device infos for all devices\n')
+print('4. Update one device to specific version')
+print('5. Update selected devices to newest version')
+print('6. Get device infos for all devices')
+print('7. Show newest Tasmota version\n')
 operation = int(input("Your choice: "))
 
 #Read devices from devices.yaml
@@ -183,8 +189,38 @@ elif operation == 3:
     #Start update
     updateProcedure(newestVersion['version'])
 elif operation == 4:
+    printStatus(devices)
+
+    number = int(input("\nEnter number of device to be updated: "))
+
+    counter = 1
+    for device, settings in devices.items():
+        if counter == number:
+            devices = {device: settings},
+            break
+        counter += 1
+
+    devices = devices[0]
+
+    version = input ("Enter version to be installed (e.g. 7.2.0): ")
+
+    updateProcedure(version)
+
+elif operation == 5:
+    printStatus(devices)
+
+    concatDevices = str(input('\nChose devices to be updated (comma separated): '))
+    concatDevices.replace(" ", "")
+    deviceArray = concatDevices.split(',')
+
+    print(deviceArray)
+
+elif operation == 6:
     #Show status
     printStatus(devices)
 
-elif operation == 5:
-    print(getNewestVersion())
+elif operation == 7:
+    newestVersion = getNewestVersion()
+    print('Release name: ' + newestVersion['release_name'])
+    print('Version number: ' + newestVersion['version'])
+    # print(getNewestVersion())
