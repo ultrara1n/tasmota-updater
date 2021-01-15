@@ -186,7 +186,6 @@ elif operation == 3:
 
     input("\n" + newestVersion['release_name'] + " looks like the latest one. Press ENTER to start update.")
 
-    #Start update
     updateProcedure(newestVersion['version'])
 elif operation == 4:
     printStatus(devices)
@@ -211,9 +210,21 @@ elif operation == 5:
 
     concatDevices = str(input('\nChose devices to be updated (comma separated): '))
     concatDevices.replace(" ", "")
-    deviceArray = concatDevices.split(',')
+    deviceIndexList = concatDevices.split(',')
 
-    print(deviceArray)
+    counter = 1
+    chosenDevices = {}
+    for device, settings in devices.items():
+        if str(counter) in deviceIndexList:
+            chosenDevices[device] = settings
+        counter += 1
+
+    devices = chosenDevices
+    newestVersion = getNewestVersion()
+
+    input("\n" + newestVersion['release_name'] + " looks like the latest one. Press ENTER to start update.")
+
+    updateProcedure(newestVersion['version'])
 
 elif operation == 6:
     #Show status
