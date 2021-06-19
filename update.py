@@ -42,7 +42,7 @@ def sendUpdate(host, filename, version):
         else:
             break
     else:
-        raise (ConnectionError, "Something went wrong with device {0}!".format(host))
+        raise ConnectionError("Something went wrong with device {0}!".format(host))
 
 def getStatus(device):
 	host = 'http://' + device["host"] + '/cm'
@@ -57,7 +57,7 @@ def getStatus(device):
 			r = requests.get(host, params=payload)
 			return r.json()
 		except:
-			print("Something went wrong with device %s. Retry. Attempt %s/5" % (device["host"], attempt))
+			print("Something went wrong with device %s. Retry. Attempt %s/5" % (device["host"], attempt+1))
 	else:
 		print("Something went completely wrong with device %s" % device["host"])
 		print("It was not possible to etablish a connection to the device. Please check the devices.yaml and your firewall.")
@@ -77,7 +77,7 @@ def readDevices():
 def printStatus(devices):
     status_array = []
     counter = 1
-    for device, settings in devices.items():
+    for settings in devices.items():
         status = getStatus(settings)
         iteration_array = []
         iteration_array.append(counter)
@@ -99,10 +99,10 @@ def determineFilename(type):
     if type is None:
         return 'tasmota.bin'
     else:
-        return 'tasmota-' + type + '.bin'
+        return 'tasmota-' + type + '.bin.gz'
 
 def bulkUpdate(devices, version, type):
-    for device, settings in devices.items():
+    for settings in devices.items():
         if type == '':
             type = settings['type']
         downloadFirmware(version, determineFilename(type))
