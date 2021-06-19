@@ -77,7 +77,7 @@ def readDevices():
 def printStatus(devices):
     status_array = []
     counter = 1
-    for settings in devices.items():
+    for device, settings in devices.items():
         status = getStatus(settings)
         iteration_array = []
         iteration_array.append(counter)
@@ -102,7 +102,7 @@ def determineFilename(type):
         return 'tasmota-' + type + '.bin.gz'
 
 def bulkUpdate(devices, version, type):
-    for settings in devices.items():
+    for device, settings in devices.items():
         if type == '':
             type = settings['type']
         downloadFirmware(version, determineFilename(type))
